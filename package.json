@@ -1,0 +1,14 @@
+{
+  "name": "sawsan-amir-wedding",
+  "version": "1.0.0",
+  "private": true,
+  "description": "دعوة زفاف سوسن و أمير — 11 October 2026",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=14"
+  },
+  "dependencies": {}
+}

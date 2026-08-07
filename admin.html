@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ردود الضيوف — سوسن و أمير</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa&family=Cormorant+Garamond:wght@400;500;600&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f2e8; --paper:#fffcf6; --ink:#4a4038; --muted:#8b7d6b;
+  --gold:#b8873f; --gold-2:#d9bc8a; --line:rgba(184,135,63,.24);
+  --green:#5d8a5e; --red:#9d2235;
+  --shadow:0 14px 40px -22px rgba(90,66,32,.5);
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#14161f; --paper:#1e202c; --ink:#ece2ce; --muted:#a2947e;
+         --gold:#d9b160; --gold-2:#8a6f3e; --line:rgba(217,177,96,.22);
+         --green:#7fb280; --red:#e08290; --shadow:0 14px 40px -22px rgba(0,0,0,.8); }
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Tajawal',system-ui,'Segoe UI',sans-serif;
+  padding:26px 18px 70px;line-height:1.6}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+input{font:inherit;color:inherit}
+
+.head{max-width:940px;margin:0 auto 26px;text-align:center}
+.head h1{font-family:'Aref Ruqaa',serif;font-weight:400;color:var(--gold);
+  font-size:clamp(1.7rem,6vw,2.4rem);margin:0}
+.head p{color:var(--muted);margin:6px 0 0;font-size:.92rem}
+.orn{display:flex;align-items:center;justify-content:center;gap:12px;margin:14px 0 0;color:var(--gold)}
+.orn::before,.orn::after{content:'';height:1px;flex:1;max-width:110px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+
+.wrap{max-width:940px;margin:0 auto}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:26px}
+.tile{background:var(--paper);border:1px solid var(--line);border-radius:18px;
+  padding:20px 14px;text-align:center;box-shadow:var(--shadow)}
+.tile .n{display:block;font-family:'Cormorant Garamond',serif;font-weight:600;
+  font-size:2.4rem;line-height:1;color:var(--gold)}
+.tile .l{display:block;margin-top:8px;font-size:.8rem;color:var(--muted);letter-spacing:.06em}
+.tile.big .n{color:var(--green)}
+
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--paper);
+  border:1px solid var(--line);border-radius:12px;padding:9px 15px;font-size:.88rem;transition:.25s}
+.btn:hover{border-color:var(--gold);background:rgba(184,135,63,.08)}
+.btn.on{background:var(--gold);color:#fffdf6;border-color:transparent}
+.spacer{flex:1}
+.stamp{color:var(--muted);font-size:.78rem}
+
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:20px;
+  padding:22px;box-shadow:var(--shadow);margin-bottom:20px}
+.panel h2{margin:0 0 4px;font-size:1.15rem;font-weight:500;display:flex;align-items:center;gap:9px}
+.panel h2 .c{background:var(--gold);color:#fffdf6;border-radius:999px;
+  font-size:.72rem;padding:2px 9px;font-weight:500}
+.panel .hint{color:var(--muted);font-size:.84rem;margin:0 0 16px}
+
+.list{display:grid;gap:9px}
+.item{display:flex;align-items:flex-start;gap:12px;background:var(--bg);
+  border:1px solid var(--line);border-radius:14px;padding:13px 15px}
+.item .who{font-weight:500;margin:0}
+.item .meta{color:var(--muted);font-size:.78rem;margin:3px 0 0}
+.item .msg{margin:7px 0 0;font-weight:300;white-space:pre-wrap;overflow-wrap:anywhere}
+.item .grow{flex:1;min-width:0}
+.plus{background:rgba(93,138,94,.14);color:var(--green);border-radius:999px;
+  padding:3px 10px;font-size:.78rem;white-space:nowrap;align-self:center}
+.del{color:var(--muted);font-size:1.1rem;line-height:1;padding:4px 8px;border-radius:8px;flex:0 0 auto}
+.del:hover{background:rgba(157,34,53,.12);color:var(--red)}
+.empty{color:var(--muted);text-align:center;padding:22px 0;font-size:.9rem}
+
+.gate{max-width:380px;margin:14vh auto;text-align:center}
+.gate input{width:100%;background:var(--paper);border:1px solid var(--line);
+  border-radius:12px;padding:13px 15px;margin:16px 0 12px;text-align:center;outline:none}
+.gate input:focus{border-color:var(--gold)}
+.err{color:var(--red);font-size:.86rem;min-height:1.2em}
+</style>
+</head>
+<body>
+
+<!-- key gate -->
+<div class="gate" id="gate" hidden>
+  <div class="head"><h1>ردود الضيوف</h1><p>أدخل كلمة الدخول</p></div>
+  <input id="keyInput" type="password" placeholder="كلمة الدخول" autocomplete="current-password">
+  <button class="btn on" id="keyBtn" style="width:100%;justify-content:center">دخول</button>
+  <p class="err" id="gateErr"></p>
+</div>
+
+<div id="app" hidden>
+  <div class="head">
+    <h1>ردود الضيوف</h1>
+    <p>سوسن &amp; أمير · الأحد 11 أكتوبر 2026</p>
+    <div class="orn">✦</div>
+  </div>
+
+  <div class="wrap">
+    <div class="tiles">
+      <div class="tile big"><span class="n" id="tHeads">0</span><span class="l">إجمالي الحضور</span></div>
+      <div class="tile"><span class="n" id="tYes">0</span><span class="l">أكّدوا الحضور</span></div>
+      <div class="tile"><span class="n" id="tNo">0</span><span class="l">اعتذروا</span></div>
+      <div class="tile"><span class="n" id="tWishes">0</span><span class="l">تهنئة</span></div>
+    </div>
+
+    <div class="bar">
+      <button class="btn" id="refreshBtn">↻ تحديث</button>
+      <button class="btn" id="autoBtn">تحديث تلقائي: مُفعّل</button>
+      <button class="btn" id="csvBtn">⭳ تنزيل CSV</button>
+      <span class="spacer"></span>
+      <span class="stamp" id="stamp"></span>
+    </div>
+
+    <div class="panel">
+      <h2>الحاضرون <span class="c" id="cYes">0</span></h2>
+      <p class="hint">الرقم الأخضر هو عدد المرافقين معه</p>
+      <div class="list" id="yesList"></div>
+      <p class="empty" id="yesEmpty">لا توجد تأكيدات بعد</p>
+    </div>
+
+    <div class="panel">
+      <h2>الاعتذارات <span class="c" id="cNo">0</span></h2>
+      <div class="list" id="noList"></div>
+      <p class="empty" id="noEmpty">لا توجد اعتذارات</p>
+    </div>
+
+    <div class="panel">
+      <h2>التهاني <span class="c" id="cW">0</span></h2>
+      <div class="list" id="wishList"></div>
+      <p class="empty" id="wEmpty">لا توجد تهاني بعد</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let KEY = new URLSearchParams(location.search).get('key')
+       || sessionStorage.getItem('admin.key') || '';
+let auto = true, timer = null, data = null;
+
+const fmt = iso => {
+  const d = new Date(iso);
+  return d.toLocaleDateString('ar-EG', { day:'numeric', month:'long' })
+       + ' · ' + d.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
+};
+
+async function load(){
+  if (!KEY) return showGate();
+  let r;
+  try { r = await fetch('/api/admin?key=' + encodeURIComponent(KEY), { cache:'no-store' }); }
+  catch { $('#stamp').textContent = 'تعذّر الاتصال بالخادم — شغّل node server.js'; return; }
+  if (r.status === 401){ sessionStorage.removeItem('admin.key'); KEY=''; return showGate('كلمة الدخول غير صحيحة'); }
+  if (!r.ok){ $('#stamp').textContent = 'خطأ ' + r.status; return; }
+
+  data = await r.json();
+  sessionStorage.setItem('admin.key', KEY);
+  $('#gate').hidden = true; $('#app').hidden = false;
+  render();
+}
+
+function showGate(msg){
+  $('#app').hidden = true; $('#gate').hidden = false;
+  $('#gateErr').textContent = msg || '';
+  $('#keyInput').focus();
+}
+
+function render(){
+  const t = data.totals;
+  $('#tHeads').textContent  = t.heads;
+  $('#tYes').textContent    = t.attending;
+  $('#tNo').textContent     = t.declined;
+  $('#tWishes').textContent = t.wishes;
+  $('#cYes').textContent = t.attending;
+  $('#cNo').textContent  = t.declined;
+  $('#cW').textContent   = t.wishes;
+
+  const yes = data.rsvps.filter(r => r.attending).sort((a,b)=>b.at.localeCompare(a.at));
+  const no  = data.rsvps.filter(r => !r.attending).sort((a,b)=>b.at.localeCompare(a.at));
+  const ws  = data.wishes.slice().sort((a,b)=>b.at.localeCompare(a.at));
+
+  fill('#yesList','#yesEmpty', yes, r => row(r.id,'rsvp', r.name, fmt(r.at),
+        null, r.guests ? `+${r.guests}` : null));
+  fill('#noList','#noEmpty', no, r => row(r.id,'rsvp', r.name, fmt(r.at)));
+  fill('#wishList','#wEmpty', ws, w => row(w.id,'wish', w.name, fmt(w.at), w.msg));
+
+  $('#stamp').textContent = 'آخر تحديث ' +
+    new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+function fill(listSel, emptySel, arr, mk){
+  const box = $(listSel);
+  box.textContent = '';
+  $(emptySel).hidden = arr.length > 0;
+  arr.forEach(x => box.appendChild(mk(x)));
+}
+
+function row(id, kind, name, when, msg, badge){
+  const el = document.createElement('div');
+  el.className = 'item';
+
+  const grow = document.createElement('div');
+  grow.className = 'grow';
+  const who = document.createElement('p'); who.className = 'who'; who.textContent = name;
+  const meta = document.createElement('p'); meta.className = 'meta'; meta.textContent = when;
+  grow.append(who, meta);
+  if (msg){ const m = document.createElement('p'); m.className='msg'; m.textContent = msg; grow.append(m); }
+  el.append(grow);
+
+  if (badge){ const b = document.createElement('span'); b.className='plus'; b.textContent = badge; el.append(b); }
+
+  const del = document.createElement('button');
+  del.className = 'del'; del.title = 'حذف'; del.textContent = '×';
+  del.onclick = async () => {
+    if (!confirm(`حذف "${name}"؟`)) return;
+    await fetch('/api/delete?key=' + encodeURIComponent(KEY),
+      { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ kind, id }) });
+    load();
+  };
+  el.append(del);
+  return el;
+}
+
+$('#refreshBtn').onclick = load;
+$('#autoBtn').onclick = e => {
+  auto = !auto;
+  e.target.textContent = 'تحديث تلقائي: ' + (auto ? 'مُفعّل' : 'موقوف');
+  e.target.classList.toggle('on', auto);
+  clearInterval(timer);
+  if (auto) timer = setInterval(load, 20000);
+};
+$('#csvBtn').onclick = () => {
+  if (!data) return;
+  const q = s => `"${String(s).replace(/"/g,'""')}"`;
+  const lines = [['النوع','الاسم','مرافقين','الحالة','الوقت','الرسالة'].map(q).join(',')];
+  data.rsvps.forEach(r => lines.push(
+    ['حضور', r.name, r.guests, r.attending ? 'سيحضر' : 'اعتذر', r.at, ''].map(q).join(',')));
+  data.wishes.forEach(w => lines.push(
+    ['تهنئة', w.name, '', '', w.at, w.msg].map(q).join(',')));
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'sawsan-amir-guests.csv';
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+};
+$('#keyBtn').onclick = () => { KEY = $('#keyInput').value.trim(); load(); };
+$('#keyInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('#keyBtn').click(); });
+
+$('#autoBtn').classList.add('on');
+timer = setInterval(load, 20000);
+load();
+</script>
+</body>
+</html>

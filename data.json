@@ -1,0 +1,19 @@
+{
+  "rsvps": [
+    {
+      "id": "msj2ycqq0d415",
+      "name": "??????",
+      "guests": 2,
+      "attending": true,
+      "at": "2026-08-07T15:08:54.914Z"
+    }
+  ],
+  "wishes": [
+    {
+      "id": "msj2ycohb3gec",
+      "name": "??????",
+      "msg": "?????",
+      "at": "2026-08-07T15:08:54.833Z"
+    }
+  ]
+}

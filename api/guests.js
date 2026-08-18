@@ -98,6 +98,18 @@ function keyOk(req){
 module.exports = async function handler(req, res){
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
 
   const action = String((req.query && req.query.action) || '');
   const method = req.method || 'GET';
@@ -134,19 +146,21 @@ module.exports = async function handler(req, res){
         const b = body(req);
         const name = clean(b.name, 80);
         const msg  = clean(b.msg, 600);
+        const isPrivate = Boolean(b.isPrivate || b.private);
         if (!name || !msg) return send(res, 400, { ok:false, error:'name and message required' });
 
         const id = newid();
         await redis('HSET', WISHES, id,
-          JSON.stringify({ id, name, msg, at: new Date().toISOString() }));
+          JSON.stringify({ id, name, msg, isPrivate, at: new Date().toISOString() }));
         return send(res, 200, { ok:true });
       }
 
       case 'wishes': {
         const all = parseAll(await redis('HVALS', WISHES));
+        const publicWishes = all.filter(w => !w.isPrivate);
         return send(res, 200, {
           ok: true,
-          wishes: all.map(w => ({ name: w.name, msg: w.msg, at: w.at }))
+          wishes: publicWishes.map(w => ({ name: w.name, msg: w.msg, at: w.at }))
         });
       }
 
@@ -157,13 +171,16 @@ module.exports = async function handler(req, res){
           redis('HVALS', WISHES).then(parseAll)
         ]);
         const yes = rsvps.filter(r => r.attending);
+        const privateCount = wishes.filter(w => w.isPrivate).length;
         return send(res, 200, {
           ok: true,
           totals: {
             attending: yes.length,
             heads: yes.reduce((s, r) => s + 1 + (r.guests || 0), 0),
             declined: rsvps.length - yes.length,
-            wishes: wishes.length
+            wishes: wishes.length,
+            wishesPrivate: privateCount,
+            wishesPublic: wishes.length - privateCount
           },
           rsvps, wishes
         });
@@ -185,6 +202,25 @@ module.exports = async function handler(req, res){
           if (found) await redis('HDEL', RSVPS, found[0]);
         }
         return send(res, 200, { ok:true });
+      }
+
+      case 'toggle_private': {
+        if (!mustPost()) return;
+        if (!keyOk(req)) return send(res, 401, { ok:false, error:'bad key' });
+        const b  = body(req);
+        const id = typeof b.id === 'string' ? b.id : '';
+        if (!id) return send(res, 400, { ok:false, error:'id required' });
+
+        const wishRaw = await redis('HGET', WISHES, id);
+        if (!wishRaw) return send(res, 404, { ok:false, error:'wish not found' });
+
+        let wish = {};
+        try { wish = JSON.parse(wishRaw); } catch {}
+        if (!wish || !wish.id) return send(res, 400, { ok:false, error:'invalid wish data' });
+
+        wish.isPrivate = typeof b.isPrivate === 'boolean' ? b.isPrivate : !wish.isPrivate;
+        await redis('HSET', WISHES, id, JSON.stringify(wish));
+        return send(res, 200, { ok:true, isPrivate: wish.isPrivate });
       }
 
       case 'check': {
@@ -209,7 +245,7 @@ module.exports = async function handler(req, res){
 
       default:
         return send(res, 404, { ok:false, error:'unknown action',
-          hint:'rsvp | wish | wishes | admin | delete | check' });
+          hint:'rsvp | wish | wishes | admin | delete | toggle_private | check' });
     }
   } catch (e){
     if (e.code === 'no_store'){

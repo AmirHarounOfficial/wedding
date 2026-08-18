@@ -142,15 +142,16 @@ case 'rsvp':
 /* الضيف بيكتب تهنئة */
 case 'wish':
     if ($method !== 'POST') out(405, ['ok' => false, 'error' => 'POST only']);
-    $b    = body();
-    $name = clean($b['name'] ?? '', 80);
-    $msg  = clean($b['msg']  ?? '', 600);
+    $b         = body();
+    $name      = clean($b['name'] ?? '', 80);
+    $msg       = clean($b['msg']  ?? '', 600);
+    $isPrivate = !empty($b['isPrivate']) || !empty($b['private']);
     if ($name === '' || $msg === '')
         out(400, ['ok' => false, 'error' => 'name and message required']);
 
-    mutate(function (array $d) use ($name, $msg): array {
+    mutate(function (array $d) use ($name, $msg, $isPrivate): array {
         if (count($d['wishes']) < MAX_ROWS)
-            $d['wishes'][] = ['id' => newid(), 'name' => $name, 'msg' => $msg, 'at' => gmdate('c')];
+            $d['wishes'][] = ['id' => newid(), 'name' => $name, 'msg' => $msg, 'isPrivate' => $isPrivate, 'at' => gmdate('c')];
         return $d;
     });
     out(200, ['ok' => true]);
@@ -158,9 +159,10 @@ case 'wish':
 /* حائط التهاني — يشوفه كل الضيوف */
 case 'wishes':
     $d = read_store();
+    $pubWishes = array_values(array_filter($d['wishes'], fn($w) => empty($w['isPrivate'])));
     $pub = array_map(
         fn($w) => ['name' => $w['name'] ?? '', 'msg' => $w['msg'] ?? '', 'at' => $w['at'] ?? ''],
-        $d['wishes']
+        $pubWishes
     );
     out(200, ['ok' => true, 'wishes' => $pub]);
 
@@ -171,17 +173,42 @@ case 'admin':
     $yes = array_values(array_filter($d['rsvps'], fn($r) => !empty($r['attending'])));
     $heads = 0;
     foreach ($yes as $r) $heads += 1 + (int)($r['guests'] ?? 0);
+    $privateCount = count(array_filter($d['wishes'], fn($w) => !empty($w['isPrivate'])));
     out(200, [
         'ok' => true,
         'totals' => [
-            'attending' => count($yes),
-            'heads'     => $heads,
-            'declined'  => count($d['rsvps']) - count($yes),
-            'wishes'    => count($d['wishes']),
+            'attending'     => count($yes),
+            'heads'         => $heads,
+            'declined'      => count($d['rsvps']) - count($yes),
+            'wishes'        => count($d['wishes']),
+            'wishesPrivate' => $privateCount,
+            'wishesPublic'  => count($d['wishes']) - $privateCount,
         ],
         'rsvps'  => $d['rsvps'],
         'wishes' => $d['wishes'],
     ]);
+
+/* تغيير خصوصية التهنئة */
+case 'toggle_private':
+    if ($method !== 'POST') out(405, ['ok' => false, 'error' => 'POST only']);
+    need_key();
+    $b  = body();
+    $id = is_string($b['id'] ?? null) ? $b['id'] : '';
+    if ($id === '') out(400, ['ok' => false, 'error' => 'id required']);
+    $newPriv = null;
+    mutate(function (array $d) use ($id, $b, &$newPriv): array {
+        foreach ($d['wishes'] as $i => $w) {
+            if (($w['id'] ?? '') === $id) {
+                $cur = !empty($w['isPrivate']);
+                $newPriv = isset($b['isPrivate']) && is_bool($b['isPrivate']) ? $b['isPrivate'] : !$cur;
+                $d['wishes'][$i]['isPrivate'] = $newPriv;
+                break;
+            }
+        }
+        return $d;
+    });
+    if ($newPriv === null) out(404, ['ok' => false, 'error' => 'wish not found']);
+    out(200, ['ok' => true, 'isPrivate' => $newPriv]);
 
 /* حذف رد */
 case 'delete':
@@ -216,5 +243,5 @@ case 'check':
 
 default:
     out(404, ['ok' => false, 'error' => 'unknown action',
-              'hint' => 'rsvp | wish | wishes | admin | delete | check']);
+              'hint' => 'rsvp | wish | wishes | admin | delete | toggle_private | check']);
 }

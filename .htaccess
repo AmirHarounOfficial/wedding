@@ -1,0 +1,22 @@
+# Apache only (aaPanel with Apache). If your site runs Nginx this file is
+# ignored — add the equivalent rule in the site's Nginx config instead:
+#
+#   location ~* /(data\.php|server\.js|package\.json|README\.md|\.htaccess) { return 404; }
+#
+# data.php is already self-protecting (its first line is <?php exit; ?>),
+# these rules are a second layer.
+
+<IfModule mod_authz_core.c>
+    <FilesMatch "^(server\.js|package\.json|package-lock\.json|README\.md|data\.json)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+    <FilesMatch "^(server\.js|package\.json|package-lock\.json|README\.md|data\.json)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>
+
+DirectoryIndex invitation.html index.html

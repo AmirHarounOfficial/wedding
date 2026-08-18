@@ -63,10 +63,16 @@ input{font:inherit;color:inherit}
 .list{display:grid;gap:9px}
 .item{display:flex;align-items:flex-start;gap:12px;background:var(--bg);
   border:1px solid var(--line);border-radius:14px;padding:13px 15px}
-.item .who{font-weight:500;margin:0}
+.item .who{font-weight:500;margin:0;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
 .item .meta{color:var(--muted);font-size:.78rem;margin:3px 0 0}
 .item .msg{margin:7px 0 0;font-weight:300;white-space:pre-wrap;overflow-wrap:anywhere}
 .item .grow{flex:1;min-width:0}
+.actions{display:flex;align-items:center;gap:6px;flex:0 0 auto;margin-inline-start:auto}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:.75rem;padding:2px 8px;border-radius:999px;font-weight:500}
+.badge.private{background:rgba(157,34,53,.15);color:var(--red)}
+.badge.public{background:rgba(93,138,94,.15);color:var(--green)}
+.priv-btn{font-size:.78rem;padding:5px 11px;border-radius:9px;border:1px solid var(--line);background:var(--paper);color:var(--ink);transition:.25s;flex:0 0 auto}
+.priv-btn:hover{border-color:var(--gold);background:rgba(189,149,38,.12)}
 .del{color:var(--muted);font-size:1.1rem;line-height:1;padding:4px 8px;border-radius:8px;flex:0 0 auto}
 .del:hover{background:rgba(157,34,53,.12);color:var(--red)}
 .empty{color:var(--muted);text-align:center;padding:22px 0;font-size:.9rem}
@@ -118,7 +124,9 @@ input{font:inherit;color:inherit}
 
   <div class="wrap">
     <div class="tiles">
-      <div class="tile big"><span class="n" id="tWishes">0</span><span class="l">تهنئة</span></div>
+      <div class="tile big"><span class="n" id="tWishes">0</span><span class="l">إجمالي التهاني</span></div>
+      <div class="tile"><span class="n" id="tPublic" style="color:var(--gold)">0</span><span class="l">عامة 🌐</span></div>
+      <div class="tile"><span class="n" id="tPrivate" style="color:var(--red)">0</span><span class="l">خاصة للعروسين 🔒</span></div>
     </div>
 
     <div class="bar">
@@ -225,12 +233,22 @@ function showGate(msg){
 }
 
 function render(){
-  const n = (data.wishes || []).length;
-  $('#tWishes').textContent = n;
-  $('#cW').textContent      = n;
+  const wishes = data.wishes || [];
+  const n = wishes.length;
+  const nPrivate = (data.totals && typeof data.totals.wishesPrivate === 'number')
+    ? data.totals.wishesPrivate
+    : wishes.filter(w => w.isPrivate).length;
+  const nPublic = (data.totals && typeof data.totals.wishesPublic === 'number')
+    ? data.totals.wishesPublic
+    : (n - nPrivate);
 
-  const ws = (data.wishes || []).slice().sort((a,b)=>b.at.localeCompare(a.at));
-  fill('#wishList','#wEmpty', ws, w => row(w.id,'wish', w.name, fmt(w.at), w.msg));
+  $('#tWishes').textContent  = n;
+  if ($('#tPublic')) $('#tPublic').textContent = nPublic;
+  if ($('#tPrivate')) $('#tPrivate').textContent = nPrivate;
+  $('#cW').textContent       = n;
+
+  const ws = wishes.slice().sort((a,b)=>b.at.localeCompare(a.at));
+  fill('#wishList','#wEmpty', ws, w => wishRow(w));
 
   $('#stamp').textContent = 'آخر تحديث ' +
     new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -243,30 +261,67 @@ function fill(listSel, emptySel, arr, mk){
   arr.forEach(x => box.appendChild(mk(x)));
 }
 
-function row(id, kind, name, when, msg, badge){
+function wishRow(w){
   const el = document.createElement('div');
   el.className = 'item';
 
   const grow = document.createElement('div');
   grow.className = 'grow';
-  const who = document.createElement('p'); who.className = 'who'; who.textContent = name;
-  const meta = document.createElement('p'); meta.className = 'meta'; meta.textContent = when;
-  grow.append(who, meta);
-  if (msg){ const m = document.createElement('p'); m.className='msg'; m.textContent = msg; grow.append(m); }
+
+  const whoHeader = document.createElement('p');
+  whoHeader.className = 'who';
+  whoHeader.textContent = w.name + ' ';
+
+  const badge = document.createElement('span');
+  badge.className = 'badge ' + (w.isPrivate ? 'private' : 'public');
+  badge.textContent = w.isPrivate ? 'خاصة 🔒' : 'عامة 🌐';
+  whoHeader.appendChild(badge);
+
+  const meta = document.createElement('p');
+  meta.className = 'meta';
+  meta.textContent = fmt(w.at);
+
+  grow.append(whoHeader, meta);
+  if (w.msg){
+    const m = document.createElement('p');
+    m.className = 'msg';
+    m.textContent = w.msg;
+    grow.append(m);
+  }
   el.append(grow);
 
-  if (badge){ const b = document.createElement('span'); b.className='plus'; b.textContent = badge; el.append(b); }
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'priv-btn';
+  toggleBtn.title = w.isPrivate ? 'تغيير إلى عامة' : 'تغيير إلى خاصة';
+  toggleBtn.textContent = w.isPrivate ? '🌐 جعلها عامة' : '🔒 جعلها خاصة';
+  toggleBtn.onclick = async () => {
+    toggleBtn.disabled = true;
+    try {
+      await fetch(API + '?action=toggle_private&key=' + encodeURIComponent(KEY), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: w.id, isPrivate: !w.isPrivate })
+      });
+    } catch {}
+    load();
+  };
+  actions.append(toggleBtn);
 
   const del = document.createElement('button');
   del.className = 'del'; del.title = 'حذف'; del.textContent = '×';
   del.onclick = async () => {
-    if (!confirm(`حذف "${name}"؟`)) return;
+    if (!confirm(`حذف "${w.name}"؟`)) return;
     await fetch(API + '?action=delete&key=' + encodeURIComponent(KEY),
       { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ kind, id }) });
+        body: JSON.stringify({ kind: 'wish', id: w.id }) });
     load();
   };
-  el.append(del);
+  actions.append(del);
+
+  el.append(actions);
   return el;
 }
 
@@ -281,8 +336,8 @@ $('#autoBtn').onclick = e => {
 $('#csvBtn').onclick = () => {
   if (!data) return;
   const q = s => `"${String(s).replace(/"/g,'""')}"`;
-  const lines = [['الاسم','الوقت','التهنئة'].map(q).join(',')];
-  (data.wishes || []).forEach(w => lines.push([w.name, w.at, w.msg].map(q).join(',')));
+  const lines = [['الاسم','الوقت','النوع','التهنئة'].map(q).join(',')];
+  (data.wishes || []).forEach(w => lines.push([w.name, w.at, w.isPrivate ? 'خاصة' : 'عامة', w.msg].map(q).join(',')));
   const blob = new Blob(['﻿' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = 'sawsan-amir-wishes.csv';

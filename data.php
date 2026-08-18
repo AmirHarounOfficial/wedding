@@ -1,0 +1,5 @@
+<?php exit; ?>
+{
+    "rsvps": [],
+    "wishes": []
+}

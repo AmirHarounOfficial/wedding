@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════
-   دعوة زفاف سوسن و أمير — small server
+   دعوة زفاف أمير و سوسن — small server
    ────────────────────────────────────────────────────────────────
    Serves the invitation AND collects RSVPs + congratulations so
    you can see them all in one place (admin.html).
@@ -212,7 +212,7 @@ http.createServer(async (req, res) => {
     json(res, err.code === 413 ? 413 : 400, { ok:false, error: err.message });
   }
 }).listen(PORT, () => {
-  console.log(`\n  دعوة سوسن و أمير\n`);
+  console.log(`\n  دعوة أمير و سوسن\n`);
   console.log(`  invitation  →  http://localhost:${PORT}/`);
   console.log(`  your page   →  http://localhost:${PORT}/admin.html?key=${ADMIN_KEY}\n`);
 });

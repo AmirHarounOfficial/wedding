@@ -2,11 +2,11 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "wedding",
+      "name": "wedding-nostore",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["server.js"],
-      "port": 3000,
-      "autoPort": true
+      "runtimeArgs": ["C:\\Users\\amirt\\AppData\\Local\\Temp\\claude\\D--work-wedding\\ac8e2734-7bbb-4a04-9e37-59c91b2e064e\\scratchpad\\vercel-nostore.js"],
+      "port": 8150,
+      "autoPort": false
     }
   ]
 }

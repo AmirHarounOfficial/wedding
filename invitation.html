@@ -987,9 +987,11 @@ $('#gbForm').addEventListener('submit', async e => {
 });
 
 /* ───────── scroll reveal ───────── */
+// Reveal as soon as the section enters the viewport. The guestbook can grow
+// taller than the screen, so a percentage threshold may never be reached.
 const io = new IntersectionObserver(es => {
   es.forEach(en => { if (en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
-}, { threshold: .14, rootMargin: '0px 0px -8% 0px' });
+}, { threshold: 0, rootMargin: '0px 0px -8% 0px' });
 $$('.reveal').forEach(el => io.observe(el));
 
 /* ───────── scattered flora (seeded, so it never jumps) ───────── */
